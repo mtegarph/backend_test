@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Post;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 
 class PostController extends Controller {
     /**
@@ -57,12 +58,13 @@ class PostController extends Controller {
      * @param  Post $post
      * @return \Illuminate\Http\JsonResponse
      */
-    public function update(Request $request, Post $post) {
-        // Ensure only the owner can update the post
+    public function update(Request $request, $id) {
+        $post = Post::findOrFail($id);
         if ($post->user_id !== auth()->id()) {
+            
             return response()->json([
                 'message' => 'Unauthorized',
-                'error' => 'You are not authorized to update this post'
+                'error' => 'You are not authorized to update this post user ' . $post->user_id . ' and authenticated user is ' . auth()->id()
             ], 403);
         }
 
@@ -73,7 +75,7 @@ class PostController extends Controller {
         ]);
 
         $post->update($data);
-        Cache::forget('posts_with_comments'); // Clear cached posts after update
+        Cache::forget('posts_with_comments'); 
 
         return response()->json([
             'message' => 'Post updated successfully',
@@ -87,7 +89,8 @@ class PostController extends Controller {
      * @param  Post $post
      * @return \Illuminate\Http\JsonResponse
      */
-    public function destroy(Post $post) {
+    public function destroy( $id) {
+        $post = Post::findOrFail($id);
         // Ensure only the owner can delete the post
         if ($post->user_id !== auth()->id()) {
             return response()->json([
